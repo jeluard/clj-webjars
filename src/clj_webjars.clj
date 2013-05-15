@@ -7,15 +7,9 @@
 
 (def ^:dynamic ^WebJarAssetLocator *locator* (WebJarAssetLocator.))
 
-(defn locate-asset [name]
-  (.getFullPath *locator* name))
-
 (defn list-assets
   ([] (list-assets "/"))
   ([path] (.listAssets *locator* path)))
-
-(defn index []
-  (.getFullPathIndex *locator*))
 
 (defn- current-context-class-loader []
   (. (. Thread (currentThread)) (getContextClassLoader)))
@@ -23,9 +17,6 @@
 (defn- load-resource
   ([resource] (load-resource resource (current-context-class-loader)))
   ([resource ^ClassLoader class-loader] (io/resource resource class-loader)))
-
-(defn load-asset [name]
-  (load-resource (locate-asset name)))
 
 (defn- last-modified [^java.net.URL url]
   (->> (.getFile url)
