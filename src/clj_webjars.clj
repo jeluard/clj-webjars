@@ -35,11 +35,16 @@
 (defn- date-as-string [^java.util.Date date]
   (.format (file-info/make-http-format) date))
 
+(defn- clone-input-stream [is]
+  (let [os (java.io.ByteArrayOutputStream.)]
+    (io/copy is os)
+    (java.io.ByteArrayInputStream. (.toByteArray os))))
+
 (defn load-assets []
   (into {} (for [asset (list-assets)]
              [asset (let [url (load-resource asset)]
-                      (let [^java.io.InputStream stream (io/input-stream url)]
-                        {:stream stream :last-modified (last-modified url)}))])))
+                      (with-open [^java.io.InputStream stream (io/input-stream url)]
+                        {:stream (clone-input-stream stream) :last-modified (last-modified url)}))])))
 
 (def assets (atom {}))
 
