@@ -87,5 +87,5 @@
       (catch IllegalArgumentException e (response-multiple-matches e))))
 
 (defn wrap-webjars
-  ([handler] (wrap-webjars handler ["assets/js/" "assets/css/"]))
+  ([handler] (wrap-webjars handler ["assets/js/" "assets/css/" "assets/img/"]))
   ([handler roots] (fn [req] (let [response (asset-response req roots)] (if (nil? response) (handler req) response)))))
