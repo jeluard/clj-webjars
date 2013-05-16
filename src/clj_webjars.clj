@@ -51,8 +51,7 @@
 (defn- response-not-modified []
   (-> (response/response "")
       (response/status 304)
-      (response/header "Content-Length" 0)
-      (response/header "Date" (date-as-string (java.util.Date.)))))
+      (response/header "Content-Length" 0)))
 
 (defn- response-modified [stream date]
   (-> (response/response stream)
