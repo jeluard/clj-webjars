@@ -27,7 +27,7 @@
 (defn- last-modified [^java.net.URL url]
   (->> (.getFile url)
        (re-find #"file:(.+)!")
-       second
+       ^String second
        java.io.File.
        .lastModified
        java.util.Date.))
@@ -62,7 +62,7 @@
   (-> (response/response stream)
       (response/header "Last-Modified" (date-as-string date))))
 
-(defn- response-multiple-matches [e]
+(defn- response-multiple-matches [^Exception e]
   (-> (response/response (.getMessage e))
       (response/status 400)))
 
@@ -77,7 +77,7 @@
     string))
 
 (defn- extract-path [^String uri roots]
-  (some #(when (.startsWith (remove-leading-slash uri) %) (remove-trailing-slash (replace-first uri % ""))) (map #(remove-leading-slash %) roots)))
+  (some #(when (.startsWith ^String (remove-leading-slash uri) %) (remove-trailing-slash (replace-first uri % ""))) (map #(remove-leading-slash %) roots)))
 
 (defn- get-asset [uri roots]
   (if-let [path (extract-path uri roots)]
