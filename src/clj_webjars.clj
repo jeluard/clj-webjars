@@ -12,7 +12,12 @@
 ;;Inspired by https://gist.github.com/cemerick/3655445
 
 (defn locate-asset [path]
-  (.getFullPath *locator* path))
+  (try
+    (.getFullPath *locator* path)
+    (catch IllegalArgumentException e
+      (if (.contains (.getMessage e) "not be found")
+        nil
+        (throw e)))))
 
 (defn list-assets
   ([] (list-assets "/"))
