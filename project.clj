@@ -5,4 +5,5 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.webjars/webjars-locator "0.4-SNAPSHOT"]
-                 [ring/ring-core "1.2.0-beta1"]])
+                 [ring/ring-core "1.2.0-beta1"]
+                 [org.webjars/rickshaw "1.1.2-1" :scope "test"]])
