@@ -10,8 +10,11 @@
   (is (not (locate-asset "absent.js")))
   (is (not (locate-asset "zz.min.js"))))
 
+(deftest locate-multiple.asset
+  (is (thrown? IllegalArgumentException (locate-asset "font-awesome.min.css"))))
+
 (deftest list-existing-assets
-  (is (= 7 (count (list-assets)))))
+  (is (= 159 (count (list-assets)))))
 
 (deftest list-existing-assets-filtered
   (is (empty? (list-assets "/not-existing"))))

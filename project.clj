@@ -6,4 +6,5 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.webjars/webjars-locator "0.4"]
                  [ring/ring-core "1.2.0-beta2"]
-                 [org.webjars/rickshaw "1.1.2-1" :scope "test"]])
+                 [org.webjars/rickshaw "1.1.2-1" :scope "test"]
+                 [org.webjars/font-awesome "3.0.2" :scopt "test"]])
