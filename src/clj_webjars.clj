@@ -77,10 +77,10 @@
     string))
 
 (defn- extract-path [^String uri roots]
-  (some #(when (.startsWith (remove-leading-slash uri) %) (remove-trailing-slash (replace-first uri % ""))) roots))
+  (some #(when (.startsWith (remove-leading-slash uri) %) (remove-trailing-slash (replace-first uri % ""))) (map #(remove-leading-slash %) roots)))
 
 (defn- get-asset [uri roots]
-  (if-let [path (extract-path uri (map #(remove-leading-slash %) roots))]
+  (if-let [path (extract-path uri roots)]
     (get @assets (locate-asset path))))
 
 (defn asset-response [req roots]
