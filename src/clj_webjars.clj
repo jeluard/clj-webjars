@@ -12,6 +12,9 @@
 ;;Inspired by https://gist.github.com/cemerick/3655445
 
 (defn locate-asset [path]
+  "Locate asset from partial path e.g. d3.min.js, 3.1.5/d3.min.js, d3js/3.1.5/d3.min.js.
+  Throws an IllegalArgumentException if path does not identify an unique asset.
+  Returns nil if path do not identify an existing asset."
   (try
     (.getFullPath *locator* path)
     (catch IllegalArgumentException e
@@ -20,6 +23,7 @@
         (throw e)))))
 
 (defn list-assets
+  "List assets available under path ('/' by default)."
   ([] (list-assets "/"))
   ([path] (.listAssets *locator* path)))
 
@@ -86,6 +90,7 @@
     (get @assets (locate-asset path))))
 
 (defn asset-response [req roots]
+  "Create a ring response from a ring request "
   (try (if-let [asset (get-asset (request/path-info req) roots)]
     (let [last-modified (:last-modified asset)]
       (if (#'file-info/not-modified-since? req last-modified)
@@ -94,6 +99,7 @@
       (catch IllegalArgumentException e (response-multiple-matches e))))
 
 (defn wrap-webjars
+  "Ring wrapper serving webjars assets."
   ([handler] (wrap-webjars handler ["assets/js/" "assets/css/" "assets/img/"]))
   ([handler roots] (fn [req] (if-let [response (asset-response req roots)]
                                response
