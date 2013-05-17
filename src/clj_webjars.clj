@@ -7,6 +7,7 @@
   (:import [org.webjars WebJarAssetLocator]))
 
 (def ^:dynamic ^WebJarAssetLocator *locator* (WebJarAssetLocator.))
+(def assets (atom {}))
 
 ;;Inspired by https://gist.github.com/cemerick/3655445
 
@@ -17,12 +18,8 @@
   ([] (list-assets "/"))
   ([path] (.listAssets *locator* path)))
 
-(defn- current-context-class-loader []
-  (. (. Thread (currentThread)) (getContextClassLoader)))
-
-(defn- load-resource
-  ([resource] (load-resource resource (current-context-class-loader)))
-  ([resource ^ClassLoader class-loader] (io/resource resource class-loader)))
+(defn- load-resource [resource class-loaders]
+  (some #(io/resource resource %) class-loaders))
 
 (defn- last-modified [^java.net.URL url]
   (->> (.getFile url)
@@ -40,16 +37,18 @@
     (io/copy is os)
     (java.io.ByteArrayInputStream. (.toByteArray os))))
 
-(defn load-assets []
+(defn load-assets [class-loaders]
   (into {} (for [asset (list-assets)]
-             [asset (let [url (load-resource asset)]
+             [asset (let [url (load-resource asset class-loaders)]
                       (with-open [^java.io.InputStream stream (io/input-stream url)]
                         {:stream (clone-input-stream stream) :last-modified (last-modified url)}))])))
 
-(def assets (atom {}))
+(defn- current-context-class-loader []
+  (. (. Thread (currentThread)) (getContextClassLoader)))
 
-(defn refresh-assets! []
-  (reset! assets (load-assets)))
+(defn refresh-assets!
+  ([] (refresh-assets! [(current-context-class-loader)]))
+  ([class-loaders] (reset! assets (load-assets class-loaders))))
 
 (defn- response-not-modified []
   (-> (response/response "")
@@ -91,4 +90,6 @@
 
 (defn wrap-webjars
   ([handler] (wrap-webjars handler ["assets/js/" "assets/css/" "assets/img/"]))
-  ([handler roots] (fn [req] (let [response (asset-response req roots)] (if (nil? response) (handler req) response)))))
+  ([handler roots] (fn [req] (if-let [response (asset-response req roots)]
+                               response
+                               (handler req)))))
