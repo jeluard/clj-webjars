@@ -7,7 +7,7 @@
   (is (locate-asset "d3.min.js")))
 
 (deftest not-locate-not-existing-asset
-  (is (locate-asset "absent.js"))
+  (is (not (locate-asset "absent.js")))
   (is (not (locate-asset "zz.min.js"))))
 
 (deftest list-existing-assets
