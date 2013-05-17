@@ -51,8 +51,6 @@
 (defn refresh-assets! []
   (reset! assets (load-assets)))
 
-(refresh-assets!)
-
 (defn- response-not-modified []
   (-> (response/response "")
       (response/status 304)
