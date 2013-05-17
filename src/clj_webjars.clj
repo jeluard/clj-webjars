@@ -62,24 +62,24 @@
   (-> (response/response stream)
       (response/header "Last-Modified" (date-as-string date))))
 
-(defn response-multiple-matches [e]
+(defn- response-multiple-matches [e]
   (-> (response/response (.getMessage e))
       (response/status 400)))
 
-(defn remove-leading-slash [^String string]
+(defn- remove-leading-slash [^String string]
   (if (.startsWith string "/")
     (subs string 1)
     string))
 
-(defn remove-trailing-slash [^String string]
+(defn- remove-trailing-slash [^String string]
   (if (.endsWith string "/")
     (subs string 0 (- (.length string) 1))
     string))
 
-(defn extract-path [^String uri roots]
+(defn- extract-path [^String uri roots]
   (some #(when (.startsWith (remove-leading-slash uri) %) (remove-trailing-slash (replace-first uri % ""))) roots))
 
-(defn get-asset [uri roots]
+(defn- get-asset [uri roots]
   (if-let [path (extract-path uri (map #(remove-leading-slash %) roots))]
     (get @assets (locate-asset path))))
 
