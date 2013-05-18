@@ -1,6 +1,7 @@
 (ns clj-webjars
   (:require [clojure.java.io :as io]
             [clojure.string :refer [replace-first]]
+            [ring.util.mime-type :refer [ext-mime-type]]
             [ring.util.request :as request]
             [ring.util.response :as response]
             [ring.middleware.file-info :as file-info])
@@ -58,9 +59,10 @@
       (response/status 304)
       (response/header "Content-Length" 0)))
 
-(defn- response-modified [stream date]
+(defn- response-modified [uri stream date]
   (-> (response/response stream)
-      (response/header "Last-Modified" (date-as-string date))))
+      (response/header "Last-Modified" (date-as-string date))
+      (response/content-type (or (ext-mime-type uri) "application/octet-stream"))))
 
 (defn- response-multiple-matches [path assets]
   (-> (response/response (format "Found several matching assets for %s: %s " path assets))
@@ -94,11 +96,11 @@
     (assets-for path)))
 
 (defn- asset-response [req asset]
-  (let [last-modified (:last-modified asset)]
-    (println " asset:  " asset)
+  (let [uri (:uri req)
+        last-modified (:last-modified asset)]
     (if (#'file-info/not-modified-since? req last-modified)
       (response-not-modified)
-      (response-modified (:stream asset) last-modified))))
+      (response-modified uri (:stream asset) last-modified))))
 
 (defn wrap-webjars
   "Ring wrapper serving webjars assets. Intercepts uri matching [assets/js, assets/css, assets/img] by default."
