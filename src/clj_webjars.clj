@@ -6,29 +6,19 @@
             [ring.middleware.file-info :as file-info])
   (:import [org.webjars WebJarAssetLocator]))
 
-(def ^:dynamic ^WebJarAssetLocator *locator* (WebJarAssetLocator.))
-(def assets (atom {}))
+(def loaded-assets (atom {}))
 
-;;Inspired by https://gist.github.com/cemerick/3655445
+(defn- asset-locator [pattern class-loaders]
+  (WebJarAssetLocator. (WebJarAssetLocator/getFullPathIndex pattern (into-array ClassLoader class-loaders))))
 
-(defn locate-asset [path]
-  "Locate asset from partial path e.g. d3.min.js, 3.1.5/d3.min.js, d3js/3.1.5/d3.min.js.
-  Throws an IllegalArgumentException if path does not identify an unique asset.
-  Returns nil if path do not identify an existing asset."
-  (try
-    (.getFullPath *locator* path)
-    (catch IllegalArgumentException e
-      (if (.contains (.getMessage e) "not be found")
-        nil
-        (throw e)))))
-
-(defn list-assets
-  "List assets available under path ('/' by default)."
-  ([] (list-assets "/"))
-  ([path] (.listAssets *locator* path)))
+(defn all-assets [pattern class-loaders]
+  "List all assets available."
+  (set (.values ^java.util.Map (.getFullPathIndex (asset-locator pattern class-loaders)))))
 
 (defn- load-resource [resource class-loaders]
   (some #(io/resource resource %) class-loaders))
+
+;;Inspired by https://gist.github.com/cemerick/3655445
 
 (defn- last-modified [^java.net.URL url]
   (->> (.getFile url)
@@ -46,18 +36,22 @@
     (io/copy is os)
     (java.io.ByteArrayInputStream. (.toByteArray os))))
 
-(defn load-assets [class-loaders]
-  (into {} (for [asset (list-assets)]
-             [asset (let [url (load-resource asset class-loaders)]
-                      (with-open [^java.io.InputStream stream (io/input-stream url)]
-                        {:stream (clone-input-stream stream) :last-modified (last-modified url)}))])))
+(defn load-assets [pattern class-loaders]
+  "Create a map of all assets mapped to their :stream content and :last-modified date."
+  (into {} (for [asset (all-assets pattern class-loaders)]
+             [(replace-first asset "META-INF/resources/webjars/" "")
+              (let [url (load-resource asset class-loaders)]
+                (with-open [^java.io.InputStream stream (io/input-stream url)]
+                  {:stream (clone-input-stream stream) :last-modified (last-modified url)}))])))
 
-(defn- current-context-class-loader []
+(defn current-context-class-loader []
+  "Current context ClassLoader."
   (. (. Thread (currentThread)) (getContextClassLoader)))
 
 (defn refresh-assets!
-  ([] (refresh-assets! [(current-context-class-loader)]))
-  ([class-loaders] (reset! assets (load-assets class-loaders))))
+  "Reset loaded assets to the result of loaded-assets call."
+  ([] (refresh-assets! #".*" [(current-context-class-loader)]))
+  ([pattern class-loaders] (reset! loaded-assets (load-assets pattern class-loaders))))
 
 (defn- response-not-modified []
   (-> (response/response "")
@@ -68,13 +62,13 @@
   (-> (response/response stream)
       (response/header "Last-Modified" (date-as-string date))))
 
-(defn- response-multiple-matches [^Exception e]
-  (-> (response/response (.getMessage e))
+(defn- response-multiple-matches [path assets]
+  (-> (response/response (format "Found several matching assets for %s: %s " path assets))
       (response/status 400)))
 
-(defn- remove-leading-slash [^String string]
-  (if (.startsWith string "/")
-    (subs string 1)
+(defn- add-leading-slash [^String string]
+  (if-not (.startsWith string "/")
+    (str "/" string)
     string))
 
 (defn- remove-trailing-slash [^String string]
@@ -82,25 +76,36 @@
     (subs string 0 (- (.length string) 1))
     string))
 
-(defn- extract-path [^String uri roots]
-  (some #(when (.startsWith ^String (remove-leading-slash uri) %) (remove-trailing-slash (replace-first uri % ""))) (map #(remove-leading-slash %) roots)))
+(defn subpath [uri roots]
+  "Return trailing part of uri compared to first matching root; nil if none matches.
+  e.g. (subpath '/a/b' ['/a']) => /b
+       (subpath '/a/b' ['/c']) => nil"
+  (let [normalized-uri (remove-trailing-slash uri)
+        normalized-roots (map #((comp add-leading-slash remove-trailing-slash) %) roots)]
+    (some #(when (.startsWith ^String normalized-uri %) (replace-first normalized-uri % "")) normalized-roots)))
 
-(defn- get-asset [uri roots]
-  (if-let [path (extract-path uri roots)]
-    (get @assets (locate-asset path))))
+(defn assets-for [^String path]
+  "All assets whose name ends with `path`."
+  (filter #(.endsWith (key %) path) @loaded-assets))
 
-(defn asset-response [req roots]
-  "Create a ring response from a ring request "
-  (try (if-let [asset (get-asset (request/path-info req) roots)]
-    (let [last-modified (:last-modified asset)]
-      (if (#'file-info/not-modified-since? req last-modified)
-        (response-not-modified)
-        (response-modified (:stream asset) last-modified))))
-      (catch IllegalArgumentException e (response-multiple-matches e))))
+(defn matching-assets [uri roots]
+  "All assets whose `uri` matches one of `roots`."
+  (if-let [path (subpath uri roots)]
+    (assets-for path)))
+
+(defn- asset-response [req asset]
+  (let [last-modified (:last-modified asset)]
+    (println " asset:  " asset)
+    (if (#'file-info/not-modified-since? req last-modified)
+      (response-not-modified)
+      (response-modified (:stream asset) last-modified))))
 
 (defn wrap-webjars
-  "Ring wrapper serving webjars assets."
-  ([handler] (wrap-webjars handler ["assets/js/" "assets/css/" "assets/img/"]))
-  ([handler roots] (fn [req] (if-let [response (asset-response req roots)]
-                               response
-                               (handler req)))))
+  "Ring wrapper serving webjars assets. Intercepts uri matching [assets/js, assets/css, assets/img] by default."
+  ([handler] (wrap-webjars handler ["assets/js" "assets/css" "assets/img"]))
+  ([handler roots] (fn [req] (let [path (request/path-info req)
+                                   assets (matching-assets path roots)]
+                               (case (count assets)
+                                 0 (handler req)
+                                 1 (asset-response req (val (first assets)))
+                                 (response-multiple-matches path  (keys assets))))))) ;; provided path matched multiple webjars assets, assuming this is a user error
