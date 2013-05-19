@@ -31,10 +31,10 @@
 (defn- date-as-string [^java.util.Date date]
   (.format (file-info/make-http-format) date))
 
-(defn- clone-input-stream [is]
+(defn- input-stream-to-array [is]
   (let [os (java.io.ByteArrayOutputStream.)]
     (io/copy is os)
-    (java.io.ByteArrayInputStream. (.toByteArray os))))
+    (.toByteArray os)))
 
 (defn load-assets [pattern class-loaders]
   "Create a map of all assets mapped to their :stream content and :last-modified date."
@@ -42,7 +42,7 @@
              [(replace-first asset "META-INF/resources/webjars/" "")
               (let [url (load-resource asset class-loaders)]
                 (with-open [^java.io.InputStream stream (io/input-stream url)]
-                  {:stream (clone-input-stream stream) :last-modified (last-modified url)}))])))
+                  {:content (input-stream-to-array stream) :last-modified (last-modified url)}))])))
 
 (defn current-context-class-loader []
   "Current context ClassLoader."
@@ -96,7 +96,7 @@
   (let [last-modified (:last-modified asset)]
     (if (#'file-info/not-modified-since? req last-modified)
       (response-not-modified)
-      (response-modified uri (:stream asset) last-modified))))
+      (response-modified uri (io/input-stream (:content asset)) last-modified))))
 
 (defn wrap-webjars
   "Ring wrapper serving webjars assets. Intercepts uri matching [assets/js, assets/css, assets/img] by default."
