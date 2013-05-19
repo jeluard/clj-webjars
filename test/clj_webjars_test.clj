@@ -3,13 +3,13 @@
         [clj-webjars]))
 
 (deftest should-all-assets-be-listable
-  (is (= 170 (count (all-assets #".*" [(current-context-class-loader)])))))
+  (is (= 159 (count (all-assets #".*" [(current-context-class-loader)])))))
 
 (deftest should-all-filtered-assets-be-listable
   (is (= 15 (count (all-assets #".*.js" [(current-context-class-loader)])))))
 
 (deftest should-all-assets-be-loadable
-  (is (= 170 (count (load-assets #".*" [(current-context-class-loader)])))))
+  (is (= 159 (count (load-assets #".*" [(current-context-class-loader)])))))
 
 (deftest should-valid-path-be-extractable
   (is (= "/c" (subpath "/a/b/c" ["/a/b"])))

@@ -13,7 +13,7 @@
 
 (defn all-assets [pattern class-loaders]
   "List all assets available."
-  (set (.values ^java.util.Map (.getFullPathIndex ^WebJarAssetLocator (asset-locator pattern class-loaders)))))
+  (.listAssets ^WebJarAssetLocator (asset-locator pattern class-loaders) ""))
 
 (defn- load-resource [resource class-loaders]
   (some #(io/resource resource %) class-loaders))
