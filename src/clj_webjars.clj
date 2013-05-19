@@ -37,7 +37,7 @@
     (.toByteArray os)))
 
 (defn load-assets [pattern class-loaders]
-  "Create a map of all assets mapped to their :stream content and :last-modified date."
+  "Create a map of all assets mapped to their :content and :last-modified date."
   (into {} (for [asset (all-assets pattern class-loaders)]
              [(replace-first asset "META-INF/resources/webjars/" "")
               (let [url (load-resource asset class-loaders)]
