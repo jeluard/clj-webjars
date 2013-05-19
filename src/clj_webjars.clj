@@ -2,7 +2,6 @@
   (:require [clojure.java.io :as io]
             [clojure.string :refer [replace-first]]
             [ring.util.mime-type :refer [ext-mime-type]]
-            [ring.util.request :as request]
             [ring.util.response :as response]
             [ring.middleware.file-info :as file-info])
   (:import [org.webjars WebJarAssetLocator]))
@@ -64,8 +63,8 @@
       (response/header "Last-Modified" (date-as-string date))
       (response/content-type (or (ext-mime-type uri) "application/octet-stream"))))
 
-(defn- response-multiple-matches [path assets]
-  (-> (response/response (format "Found several matching assets for %s: %s " path assets))
+(defn- response-multiple-matches [uri assets]
+  (-> (response/response (format "Found several matching assets for %s: %s " uri assets))
       (response/status 400)))
 
 (defn- add-leading-slash [^String string]
@@ -95,9 +94,8 @@
   (if-let [path (subpath uri roots)]
     (assets-for path)))
 
-(defn- asset-response [req asset]
-  (let [uri (:uri req)
-        last-modified (:last-modified asset)]
+(defn- asset-response [req uri asset]
+  (let [last-modified (:last-modified asset)]
     (if (#'file-info/not-modified-since? req last-modified)
       (response-not-modified)
       (response-modified uri (:stream asset) last-modified))))
@@ -105,9 +103,9 @@
 (defn wrap-webjars
   "Ring wrapper serving webjars assets. Intercepts uri matching [assets/js, assets/css, assets/img] by default."
   ([handler] (wrap-webjars handler ["assets/js" "assets/css" "assets/img"]))
-  ([handler roots] (fn [req] (let [path (request/path-info req)
-                                   assets (matching-assets path roots)]
+  ([handler roots] (fn [req] (let [uri (:uri req)
+                                   assets (matching-assets uri roots)]
                                (case (count assets)
                                  0 (handler req)
-                                 1 (asset-response req (val (first assets)))
-                                 (response-multiple-matches path  (keys assets))))))) ;; provided path matched multiple webjars assets, assuming this is a user error
+                                 1 (asset-response req uri (val (first assets)))
+                                 (response-multiple-matches uri  (keys assets))))))) ;; provided path matched multiple webjars assets, assuming this is a user error
