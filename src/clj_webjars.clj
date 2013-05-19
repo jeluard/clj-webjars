@@ -13,7 +13,7 @@
 
 (defn all-assets [pattern class-loaders]
   "List all assets available."
-  (set (.values ^java.util.Map (.getFullPathIndex (asset-locator pattern class-loaders)))))
+  (set (.values ^java.util.Map (.getFullPathIndex ^WebJarAssetLocator (asset-locator pattern class-loaders)))))
 
 (defn- load-resource [resource class-loaders]
   (some #(io/resource resource %) class-loaders))
@@ -87,7 +87,7 @@
 
 (defn assets-for [^String path]
   "All assets whose name ends with `path`."
-  (filter #(.endsWith (key %) path) @loaded-assets))
+  (filter #(.endsWith ^String (key %) path) @loaded-assets))
 
 (defn matching-assets [uri roots]
   "All assets whose `uri` matches one of `roots`."
