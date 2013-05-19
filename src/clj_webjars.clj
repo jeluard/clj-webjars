@@ -67,22 +67,20 @@
   (-> (response/response (format "Found several matching assets for %s: %s " uri assets))
       (response/status 400)))
 
-(defn- add-leading-slash [^String string]
-  (if-not (.startsWith string "/")
-    (str "/" string)
-    string))
+(defn- normalize-leading-slash [^String string]
+  (str "/" (second (re-find #"[/]*(.*)" string))))
 
-(defn- remove-trailing-slash [^String string]
-  (if (.endsWith string "/")
-    (subs string 0 (- (.length string) 1))
-    string))
+(defn- normalize-trailing-slash [^String string]
+  (clojure.string/replace string #"[/]*$" ""))
+
+(def normalize-slashes (comp normalize-leading-slash normalize-trailing-slash))
 
 (defn subpath [uri roots]
   "Return trailing part of uri compared to first matching root; nil if none matches.
   e.g. (subpath '/a/b' ['/a']) => /b
        (subpath '/a/b' ['/c']) => nil"
-  (let [normalized-uri (remove-trailing-slash uri)
-        normalized-roots (map #((comp add-leading-slash remove-trailing-slash) %) roots)]
+  (let [normalized-uri (normalize-slashes uri)
+        normalized-roots (map #(normalize-slashes %) roots)]
     (some #(when (.startsWith ^String normalized-uri %) (replace-first normalized-uri % "")) normalized-roots)))
 
 (defn assets-for [^String path]

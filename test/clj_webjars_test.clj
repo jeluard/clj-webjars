@@ -21,6 +21,8 @@
   (is (= "/c" (subpath "/a/b/c" ["/a/b/"])))
   (is (= "/c" (subpath "/a/b/c/" ["/a/b/"])))
   (is (= "/c" (subpath "/a/b/c/" ["/c" "/a/b/"])))
+  (is (= "/c" (subpath "a/b/c/" ["/a/b/"])))
+  (is (= "/c" (subpath "//a/b/c/" ["/a/b/"])))
   (is (= "/jquery.min.js" (subpath "/assets/js/jquery.min.js" ["assets/js"]))))
 
 (deftest should-invalid-subpath-be-rejected
