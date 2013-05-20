@@ -1,4 +1,4 @@
-(defproject clj-webjars "0.9.0"
+(defproject clj-webjars "0.9.1-SNAPSHOT"
   :description "A clojure helper library for webjars"
   :url "http://github.com/jeluard/clj-webjars"
   :license {:name "Eclipse Public License"
