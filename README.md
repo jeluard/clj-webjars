@@ -11,9 +11,9 @@ Add ```[clj-webjars "0.9.0"]``` to your leiningen dependencies.
 Define `wrap-webjars` as part of your handler stack to serve webjars. Then call `refresh-assets!` to trigger discovery/loading of all webjars that will be available through the wrapper.
 `refresh-assets!` accepts filters/class-loaders as argument to control which assets will be exposed.
 
-By default all requests whose URI match 'assets/js', 'assets/css' or 'assets/img' will served (or provide custom root URIs `(wrap-webjars ["assets/js"])`). Extra part of the URI will be used to match the asset among your declared webjars.
+By default all requests whose URI match `assets/js`, `assets/css` or `assets/img` will be served (alternatively provide custom root URIs using `(wrap-webjars ["assets/js"])`). Extra part of the URI will be used to match the asset among your declared webjars.
 
-Assets are served from memory and honor caching semantics (i.e. returns status code 304 when needed).
+Assets are served from memory and honor caching semantics (i.e. return status code 304 when needed).
 
 ### Example
 
