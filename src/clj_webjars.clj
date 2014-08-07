@@ -29,7 +29,7 @@
        java.util.Date.))
 
 (defn- date-as-string [^java.util.Date date]
-  (.format (file-info/make-http-format) date))
+  (.format (#'file-info/make-http-format) date))
 
 (defn- input-stream-to-array [is]
   (let [os (java.io.ByteArrayOutputStream.)]
