@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [clojure.string :refer [replace-first]]
             [ring.util.mime-type :refer [ext-mime-type]]
+            [ring.util.time :refer [format-date]]
             [ring.util.response :as response]
             [ring.middleware.file-info :as file-info])
   (:import [org.webjars WebJarAssetLocator]))
@@ -27,9 +28,6 @@
        java.io.File.
        .lastModified
        java.util.Date.))
-
-(defn- date-as-string [^java.util.Date date]
-  (.format (#'file-info/make-http-format) date))
 
 (defn- input-stream-to-array [is]
   (let [os (java.io.ByteArrayOutputStream.)]
@@ -60,7 +58,7 @@
 
 (defn- response-modified [uri stream date]
   (-> (response/response stream)
-      (response/header "Last-Modified" (date-as-string date))
+      (response/header "Last-Modified" (format-date date))
       (response/content-type (or (ext-mime-type uri) "application/octet-stream"))))
 
 (defn- response-multiple-matches [uri assets]
