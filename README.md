@@ -1,3 +1,5 @@
+*This project is not maintained anymore. You might want to use [ring-webjars](https://github.com/weavejester/ring-webjars) instead.*
+
 # clj-webjars [![Travis CI status](https://secure.travis-ci.org/jeluard/clj-webjars.png)](http://travis-ci.org/#!/jeluard/clj-webjars/builds)
 
 A [ring](https://github.com/ring-clojure/ring) wrapper to easily serve [WebJars.org](webjars.org) assets.
